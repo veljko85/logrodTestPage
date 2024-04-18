@@ -1095,945 +1095,945 @@ if (screen.width > screen.height) {
 
 
 
-///////////////////////////////////////////////////////////////////////////////////////////
-//MAP SECTION///////////////////////////////////////////////////////////////////////////////
-let fps = document.createElement("div")
-projectsWrap.appendChild(fps)
-fps.classList.add("fps")
-fps.innerHTML = "fps"
-
-let loadingPage = document.createElement("div")
-projectsWrap.appendChild(loadingPage)
-loadingPage.classList.add("loadingPage")
-
-let loadingSpinner = document.createElement("div")
-document.getElementsByClassName('loadingPage')[0].appendChild(loadingSpinner)
-loadingSpinner.classList.add("loadingSpinner")
-
-let loadingPercentages = document.createElement("div")
-document.getElementsByClassName('loadingPage')[0].appendChild(loadingPercentages)
-loadingPercentages.classList.add("loadingPercentages")
-
-let canvasZone = document.createElement("div")
-mainContainerMap.appendChild(canvasZone)
-canvasZone.classList.add("canvasZone")
-
-let canvas = document.createElement("canvas")
-canvasZone.appendChild(canvas)
-canvas.classList.add("renderCanvas")
-
-let devPopUp = document.createElement("div")
-mainContainerMap.appendChild(devPopUp)
-devPopUp.classList.add("devPopUp", "displayNone")
-devPopUp.innerHTML = "Click to select location"
-
-let toMapCenter = document.createElement("div")
-mainContainerMap.appendChild(toMapCenter)
-toMapCenter.classList.add("toMapCenter", "displayNone")
-function getFPS() {
-    setInterval(function () {
-        // fps.innerHTML = `${engine.getFps().toFixed(0)} fps`
-        fps.innerHTML = `${engine.getFps().toFixed(2)} fps`
-    }, 1000)
-}
-
-// var canvas = document.getElementById("renderCanvas");
-
-var startRenderLoop = function (engine, canvas) {
-    engine.runRenderLoop(function () {
-        if (sceneToRender && sceneToRender.activeCamera) {
-            sceneToRender.render();
-        }
-    });
-}
-
-//LOADING
-BABYLON.DefaultLoadingScreen.prototype.displayLoadingUI = function () {
-    if (document.getElementById('customLoadingScreenDiv')) {
-        // Do not add a loading screen if there is already one
-        document.getElementById('customLoadingScreenDiv').style.display = 'initial';
-        return;
-    }
-};
-BABYLON.DefaultLoadingScreen.prototype.hideLoadingUI = function () {
-    loadingPage.remove();
-};
-//end of loading
-
-var engine = null;
-var scene = null;
-var sceneToRender = null;
-var createDefaultEngine = function () { return new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true, disableWebGL2Support: false }); };
-var createScene = async function () {
-
-    const RIGHT_HANDED_SYSTEM = false;
-
-    //loading
-    engine.displayLoadingUI();
-    //to work on macbook
-    engine.disableTextureBindingOptimization = true;
-    // This creates a basic Babylon Scene object (non-mesh)
-    var scene = new BABYLON.Scene(engine);
-    scene.useRightHandedSystem = RIGHT_HANDED_SYSTEM;
-    // scene.clearColor = BABYLON.Color3.FromHexString("#000000");
-    scene.clearColor = BABYLON.Color3.FromHexString("#1b1b1b");
-    //get fps
-    document.addEventListener("keydown", (e) => {
-        if (e.key === 'f') {
-            getFPS()
-            fps.style.display = "block"
-        }
-    })
-
-    // //CAMERA
-    function cameraTargetAnimation(x, y, z, newCameraRadius, centerMap) {
-        if (screen.width < screen.height && !centerMap) {
-            x = x + 2
-        }
-        //aniamtion to change camera target position
-        var animationCameraTarget = new BABYLON.Animation(
-            "myAnimationcamera",
-            "position",
-            60,
-            BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
-            BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-        );
-        const keyFrames = [];
-        keyFrames.push({
-            frame: 0,
-            value: cameraTarget.position.clone(),
-        });
-        keyFrames.push({
-            frame: 120,
-            value: new BABYLON.Vector3(x, y, z),
-        });
-        animationCameraTarget.setKeys(keyFrames);
-        const easingFun2 = new BABYLON.CubicEase();
-        easingFun2.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
-        animationCameraTarget.setEasingFunction(easingFun2);
-        cameraTarget.animations.push(animationCameraTarget);
-        //call animation
-        scene.beginAnimation(cameraTarget, 0, 120, false);
-
-        //radius
-        //radius  animation
-        let radiusAnimation = new BABYLON.Animation(
-            "radiusAnimation",
-            "radius",
-            60,
-            BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-            BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-        );
-        let radiusKeyFrames = [];
-        radiusKeyFrames.push({
-            frame: 0,
-            value: camera.radius,
-        });
-        radiusKeyFrames.push({
-            frame: 120,
-            value: newCameraRadius,
-        });
-        radiusAnimation.setKeys(radiusKeyFrames);
-        const easingFun = new BABYLON.CubicEase();
-        easingFun.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
-        radiusAnimation.setEasingFunction(easingFun);
-        camera.animations.push(radiusAnimation);
-        //call radius animation
-        scene.beginAnimation(camera, 0, 120, false);
-
-        let alphaAnimation = new BABYLON.Animation(
-            "alphaAnimation",
-            "alpha",
-            60,
-            BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-            BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-        );
-        let alphaKeyFrames = [];
-        alphaKeyFrames.push({
-            frame: 0,
-            value: camera.alpha,
-        });
-        alphaKeyFrames.push({
-            frame: 120,
-            value: 1.32,
-        });
-        alphaAnimation.setKeys(alphaKeyFrames);
-        const easingFun3 = new BABYLON.CubicEase();
-        easingFun3.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
-        alphaAnimation.setEasingFunction(easingFun3);
-        camera.animations.push(alphaAnimation);
-        //call alpha animation
-        scene.beginAnimation(camera, 0, 120, false);
-    }
-
-    let camera = new BABYLON.ArcRotateCamera(
-        'camera1',
-        Math.PI / 2,
-        Math.PI / 2,
-        0,
-        new BABYLON.Vector3(0, 0, 0),
-        scene
-    );
-    camera.attachControl(canvas, true);
-    camera.inputs.attached.keyboard.detachControl();
-
-    camera.setPosition(new BABYLON.Vector3(-3.99, 20, 15.18))
-    if (screen.width < screen.height) {
-        camera.setPosition(new BABYLON.Vector3(-3.99, 30, 15.18))
-    }
-
-    camera.minZ = 0.1;
-    camera.lowerRadiusLimit = 5;
-    camera.upperRadiusLimit = 50;//80
-    camera.wheelDeltaPercentage = 0.01;
-    // camera.lowerBetaLimit = 0.5;
-    camera.upperBetaLimit = 0.5;
-    camera.beta = 0.5
-
-    // camera target
-    var cameraTarget = new BABYLON.MeshBuilder.CreateBox(
-        "cameraTarget",
-        { width: 1, height: 1, depth: 1 },
-        scene
-    );
-    cameraTarget.position = new BABYLON.Vector3(8, -0.03, 15.18);
-    camera.target = cameraTarget
-    cameraTarget.isVisible = false
-
-    camera.alpha = 1.32
-
-    var devCamera = new BABYLON.FreeCamera("devCamera", new BABYLON.Vector3(-78, 5, 0), scene);
-    devCamera.rotation.y = 1.57;
-
-    // var camera = new BABYLON.FreeCamera("camera", new BABYLON.Vector3(0, 2, -10), scene);
-
-    // // This targets the camera to scene origin
-    // camera.setTarget(BABYLON.Vector3.Zero());
-
-    // // This attaches the camera to the canvas
-    // camera.attachControl(canvas, true);
-
-
-    // This creates a light, aiming 0,1,0 - to the sky (non-mesh)
-    var light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
-
-    // Default intensity is 1. Let's dim the light a small amount
-    light.intensity = 0.7;
-
-    //LOAD MESHES
-    let loadePercent = 0;
-    // const box = BABYLON.MeshBuilder.CreateBox("box", { height: 5, width: 5, depth: 5 });
-
-    let sceneLoaded = [false]
-    let result = await Promise.all([
-        BABYLON.SceneLoader.ImportMeshAsync(
-            "",
-            // "https://raw.githubusercontent.com/quincecreative/logrodProjectPage/gh-pages/Minhen5.glb",
-            // "https://work.quincemedia.com/logrod-project-page/Minhen5.glb",
-            "Minhen5.glb",
-            null,
-            scene,
-            (evt) => {
-                if (evt.lengthComputable) {
-                    loadePercent = (evt.loaded * 100) / evt.total;
-                    loadePercent = loadePercent.toFixed();
-                    // console.log(evt)
-                } else {
-                    loadePercent = (evt.loaded * 100) / 24955036;
-                    loadePercent = loadePercent.toFixed();
-                }
-                // console.log(loadingPercentages)
-                loadingPercentages.innerHTML = `${loadePercent}%`
-            }
-        ),
-    ]);
-
-    let mapaMesh = result[0];
-
-    let mapaRoot = result[0].meshes[0];
-
-    // scene.onPointerObservable.add((pointerInfo) => {
-
-    //     switch (pointerInfo.type) {
-    //         //   case PointerEventTypes.POINTERDOWN:
-    //         //     mainContainer.style.cursor = "grabbing"
-    //         //     break;
-    //         //   case PointerEventTypes.POINTERUP:
-    //         //     mainContainer.style.cursor = "grab"
-    //         //     break;
-    //         case BABYLON.PointerEventTypes.POINTERPICK:
-    //             console.log(pointerInfo.pickInfo)
-    //             // for (let i = 0; i < mainContainers.length; i++) {
-    //             //     anotationClosed(i)
-    //             // }
-    //             break;
-    //     }
-    // });
-
-
-
-    mapaRoot.position = new BABYLON.Vector3(0, 0, 0)
-
-    mapaRoot.addRotation(0, 0, 0)
-
-    let mapRootClone = mapaRoot.clone()
-    mapRootClone.position = new BABYLON.Vector3(0, 0, 75.88)
-
-    mapRootClone.scaling = new BABYLON.Vector3(1, 1, 1)
-
-    // //AO tex 3
-    // // scene.getMeshByName("Bouildings").material.ambientTexture =
-    // //     new BABYLON.Texture(
-    // //         "https://raw.githubusercontent.com/quincecreative/logrodProjectPage/gh-pages/Buildings AO3-2.jpg",
-    // //         //"https://work.quincemedia.com/logrod-project-page/Buildings AO3-2.jpg",
-    // //         scene
-    // //     );
-    // // scene.getMeshByName("Bouildings").material.ambientTexture.uScale = 1; //and/or the following for vScale:
-    // // scene.getMeshByName("Bouildings").material.ambientTexture.vScale = -1; //(-1.0 or some other value)
-
-    // GUI
-    let ellipses1 = []
-    let ellipses2 = []
-    let mainContainers = []
-    let seeDetailsButtons = []
-    let posMeshes = []
-
-    var advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI", true, scene);
-
-    let guiSizeDeviderPopUp = 1.5
-    let guiSizeDeviderAnnotation = 1
-
-    /////SIZE OF ANNOTATION BASED ON SCREEN WIDHT
-    let sizeDeviderAnn = 1
-    let sizeDeviderCon = 1
-
-    if (screen.width < 1501 && screen.width > screen.height) sizeDeviderAnn = sizeDeviderCon = 0.75
-    if (screen.width < 1201 && screen.width > screen.height) sizeDeviderAnn = sizeDeviderCon = 0.625
-
-    if (screen.width < 500 && screen.width < screen.height) {
-        sizeDeviderAnn = 3
-        sizeDeviderCon = 1.5
-    }
-    // if (screen.width < screen.height) {
-    //     if (window.devicePixelRatio === 3) {
-    //         sizeDeviderAnn = 3
-    //         sizeDeviderCon = 1.5
-    //     }
-    //     if (window.devicePixelRatio === 2) {
-    //         sizeDeviderAnn = 2
-    //         sizeDeviderCon = 1
-    //     }
-    // }
-
-
-    let mainContainerWidth = 350 * sizeDeviderCon
-    let mainContainerHeight = 150 * sizeDeviderCon
-    let mainContainerOffsetX = -175 * sizeDeviderCon
-    let mainContainerOffsetY = 75 * sizeDeviderCon
-
-    let imageContainerWidth;
-    let imageContainerHeight;
-    let imageWidth;
-    let imageHeight;
-
-    imageContainerWidth = imageContainerHeight = imageWidth = imageHeight = 150 * sizeDeviderCon
-
-    ////title
-    let titleContainerWidth = 190 * sizeDeviderCon
-    let titleContainerHeight = 45 * sizeDeviderCon
-    let titleContainerTop = 15 * sizeDeviderCon
-    let titleContainerRight = 10 * sizeDeviderCon
-    let titleFontSize = 17 * sizeDeviderCon
-    let titleLineSpasing = -4 * sizeDeviderCon
-    //adress
-    let adressContainerWidth = 190 * sizeDeviderCon
-    let adressContainerHeight = 40 * sizeDeviderCon
-    let adressContainerTop = 60 * sizeDeviderCon
-    let adressContainerRight = 10 * sizeDeviderCon
-    let adressFontSize = 12 * sizeDeviderCon
-    let adressLineSpacing = -5 * sizeDeviderCon
-    //button
-    let buttonContainerWidth = 190 * sizeDeviderCon
-    let buttonContainerHeight = 50 * sizeDeviderCon
-    let buttonContainerTop = 95 * sizeDeviderCon
-    let seeDetailsWidth = 120 * sizeDeviderCon
-    let seeDetailsFontSize = 15 * sizeDeviderCon
-    let seeDetailsHeight = 40 * sizeDeviderCon
-
-    //ellipses
-    let ellipse1Width = 30 * sizeDeviderAnn
-    let ellipse1Height = 30 * sizeDeviderAnn
-    let ellipse1Thickness = 8 * sizeDeviderAnn
-
-    let ellipse2Width = 30 * sizeDeviderAnn
-    let ellipse2Height = 30 * sizeDeviderAnn
-
-
-
-
-    if (browser != "Chrome" && browser != "Opera" && browser != "Edge") {
-        if (screen.width > 1500) {
-            advancedTexture.idealWidth = 1500;
-            advancedTexture.renderAtIdealSize = true;
-            guiSizeDeviderPopUp = 1.125//0.75
-            guiSizeDeviderAnnotation = 0.75
-            titleLineSpasing = titleLineSpasing
-        }
-    }
-
-    //create anotation
-    function createAnotationCont(posMesh, imageSrc, proTitle, proAdress, i) {
-        if (showOnMap[i] === "yes" || showOnMap[i] === "Yes") {
-            //main container
-            var mainContainer = new BABYLON.GUI.Rectangle();
-            mainContainer.width = 0 + "px";
-            mainContainer.height = 0 + "px";
-            // mainContainer.cornerRadius = 20;
-            mainContainer.color = "Orange";
-            mainContainer.thickness = 0;
-            mainContainer.background = "white";
-            advancedTexture.addControl(mainContainer);
-            mainContainer.linkWithMesh(posMesh);
-            mainContainer.linkOffsetX = (mainContainerOffsetX * guiSizeDeviderPopUp) + "px"
-            mainContainer.linkOffsetY = -(mainContainerOffsetY * guiSizeDeviderPopUp) + "px"
-            // mainContainer.alpha = 0;
-            mainContainers.push(mainContainer)
-
-            //image container
-            var imageContainer = new BABYLON.GUI.Rectangle();
-            imageContainer.width = (imageContainerWidth * guiSizeDeviderPopUp) + "px";
-            imageContainer.height = (imageContainerHeight * guiSizeDeviderPopUp) + "px";
-            imageContainer.color = "Orange";
-            imageContainer.thickness = 0;
-            imageContainer.background = "white";
-            imageContainer.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
-            mainContainer.addControl(imageContainer);
-            //image
-            var image = new BABYLON.GUI.Image("image", imageSrc);
-            image.width = (imageWidth * guiSizeDeviderPopUp) + "px";
-            image.height = (imageHeight * guiSizeDeviderPopUp) + "px";
-            image.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
-            // image.stretch = BABYLON.GUI.Image.STRETCH_EXTEND
-            imageContainer.addControl(image);
-            //title container
-            var titleContainer = new BABYLON.GUI.Rectangle();
-            titleContainer.width = (titleContainerWidth * guiSizeDeviderPopUp) + "px";
-            titleContainer.height = (titleContainerHeight * guiSizeDeviderPopUp) + "px";
-            titleContainer.color = "Orange";
-            titleContainer.thickness = 0;
-            // titleContainer.background = "red";
-            titleContainer.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
-            titleContainer.verticalAlignment =
-                BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
-            titleContainer.top = (titleContainerTop * guiSizeDeviderPopUp) + "px"
-            titleContainer.paddingRight = (titleContainerRight * guiSizeDeviderPopUp) + "px"
-            mainContainer.addControl(titleContainer);
-            //title
-            var title = new BABYLON.GUI.TextBlock();
-            title.color = "Black";
-            title.fontSize = (titleFontSize * guiSizeDeviderPopUp) + "px"
-            title.textHorizontalAlignment = 0
-            title.textVerticalAlignment = 2
-            title.text = proTitle;
-            title.textWrapping = true;
-            title.lineSpacing = (titleLineSpasing) + "px";
-            title.drawOutline = true;
-            title.outlineColor = "black";
-            title.outlineWidth = (0.5 * guiSizeDeviderPopUp);
-            titleContainer.addControl(title);
-            //adress container
-            var adressContainer = new BABYLON.GUI.Rectangle();
-            adressContainer.width = (adressContainerWidth * guiSizeDeviderPopUp) + "px";
-            adressContainer.height = (adressContainerHeight * guiSizeDeviderPopUp) + "px";
-            adressContainer.color = "Orange";
-            adressContainer.thickness = 0;
-            // adressContainer.background = "blue";
-            adressContainer.top = (adressContainerTop * guiSizeDeviderPopUp) + "px"
-            adressContainer.paddingRight = (adressContainerRight * guiSizeDeviderPopUp) + "px"
-            adressContainer.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
-            adressContainer.verticalAlignment =
-                BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
-            mainContainer.addControl(adressContainer);
-            //adress
-            var adress = new BABYLON.GUI.TextBlock();
-            adress.color = "Gray";
-            adress.fontSize = (adressFontSize * guiSizeDeviderPopUp) + "px"
-            adress.textHorizontalAlignment = 0
-            adress.textVerticalAlignment = 0
-            adress.text = proAdress;
-            adress.textWrapping = true;
-            adress.lineSpacing = (adressLineSpacing * guiSizeDeviderPopUp) + "px";
-            adressContainer.addControl(adress);
-            //button container
-            var buttonContainer = new BABYLON.GUI.Rectangle();
-            buttonContainer.width = (buttonContainerWidth * guiSizeDeviderPopUp) + "px";
-            buttonContainer.height = (buttonContainerHeight * guiSizeDeviderPopUp) + "px";
-            buttonContainer.color = "Orange";
-            buttonContainer.thickness = 0;
-            // buttonContainer.background = "blue";
-            buttonContainer.top = (buttonContainerTop * guiSizeDeviderPopUp) + "px"
-            buttonContainer.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
-            buttonContainer.verticalAlignment =
-                BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
-            mainContainer.addControl(buttonContainer);
-            //button
-            var seeDetails = BABYLON.GUI.Button.CreateSimpleButton("seeDetails", "See Details");
-            // var seeDetailsGer = BABYLON.GUI.Button.CreateSimpleButton("seeDetails", "Details Ansehen");
-            seeDetails.width = (seeDetailsWidth * guiSizeDeviderPopUp) + "px"
-            seeDetails.fontSize = (seeDetailsFontSize * guiSizeDeviderPopUp) + "px"
-            seeDetails.height = (seeDetailsHeight * guiSizeDeviderPopUp) + "px";
-            seeDetails.color = "white";
-            seeDetails.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
-            // button1.cornerRadius = 20;
-            seeDetails.background = "black";
-            buttonContainer.addControl(seeDetails);
-            seeDetailsButtons.push(seeDetails)
-        } else {
-            mainContainers.push("")
-            seeDetailsButtons.push("")
-        }
-    }
-
-    function createAnotation(corX, corY, corZ, i) {
-        if (showOnMap[i] === "yes" || showOnMap[i] === "Yes") {
-            //fake possition mesh
-            let posMesh = new BABYLON.MeshBuilder.CreateBox(
-                "posMesh",
-                { width: 0.1, height: 0.1, depth: 0.1 },
-                scene
-            );
-            posMesh.position = new BABYLON.Vector3(corX, corY, corZ);
-            posMesh.isVisible = false
-            posMeshes.push(posMesh)
-            //create ellipses
-            //inside
-            var ellipse2 = new BABYLON.GUI.Ellipse();
-            ellipse2.width = 0 + "px"
-            ellipse2.height = 0 + "px";
-            ellipse2.color = "white";
-            // ellipse2.thickness = 15;
-            ellipse2.background = "white";
-            advancedTexture.addControl(ellipse2);
-            ellipse2.linkWithMesh(posMesh);
-            ellipses2.push(ellipse2)
-            //outside
-            var ellipse1 = new BABYLON.GUI.Ellipse();
-            ellipse1.width = (ellipse1Width * guiSizeDeviderAnnotation) + "px"
-            // ellipse1.width = 25 + "px"
-            ellipse1.height = (ellipse1Height * guiSizeDeviderAnnotation) + "px";
-            // ellipse1.height = 25 + "px";
-            ellipse1.color = "white";
-            ellipse1.thickness = (ellipse1Thickness * guiSizeDeviderAnnotation);
-            // ellipse1.thickness = 7;
-            ellipse1.background = "transparent";
-            advancedTexture.addControl(ellipse1);
-            ellipse1.linkWithMesh(posMesh);
-            ellipses1.push(ellipse1)
-        } else {
-            posMeshes.push("")
-            ellipses2.push("")
-            ellipses1.push("")
-        }
-    }
-
-    function toNum(elm) {
-        return Number(elm)
-    }
-
-    let coordinatesForDirectons = []
-
-    let anotEntered = []
-    let mainContEntered = []
-
-    for (let i = 0; i < coordinates.length; i++) {
-        let coordinateString = coordinates[i].split(",")
-        let coordinatesNum = coordinateString.map(toNum)
-        coordinatesForDirectons[i] = [coordinatesNum[0], coordinatesNum[1], coordinatesNum[2]]
-        createAnotation(coordinatesNum[0], coordinatesNum[1], coordinatesNum[2], i)
-    }
-
-    for (let i = 0; i < coordinates.length; i++) {
-        createAnotationCont(posMeshes[i], projectThumbnailsSrc[i], projectTitlesNames[i], projectAdresses[i], i)
-        anotEntered.push(false)
-        mainContEntered.push(false)
-    }
-
-
-    let ell1Width = (ellipse1Width * guiSizeDeviderAnnotation);
-    let ell1Thick = (ellipse1Thickness * guiSizeDeviderAnnotation)
-    let ell2Width = 0;
-    let mainAlpha = 0;
-    let mainWidth = 0
-    let mainHeight = 0
-    let annotationOpened = false;
-
-    function anotationOpen(i) {
-        if (screen.width > screen.height) {
-            if (annotationOpened) {
-                // console.log(i)
-                // ellipses1[i].thickness = (5 * guiSizeDeviderAnnotation);
-                ellipses1[i].thickness = ((ellipse1Thickness * 0.625) * guiSizeDeviderAnnotation);
-                // ellipses1[i].width = (70 * guiSizeDeviderAnnotation) + "px"
-                ellipses1[i].width = ((ellipse1Width * 2.33) * guiSizeDeviderAnnotation) + "px"
-                // ellipses1[i].height = (70 * guiSizeDeviderAnnotation) + "px";
-                ellipses1[i].height = ((ellipse1Height * 2.33) * guiSizeDeviderAnnotation) + "px";
-
-                // ellipses2[i].width = (30 * guiSizeDeviderAnnotation) + "px"
-                // ellipses2[i].height = (30 * guiSizeDeviderAnnotation) + "px";
-                ellipses2[i].width = (ellipse2Width * guiSizeDeviderAnnotation) + "px"
-                ellipses2[i].height = (ellipse2Height * guiSizeDeviderAnnotation) + "px";
-
-
-                // mainContainers[i].width = (350 * guiSizeDeviderPopUp) + 'px'
-                // mainContainers[i].height = (150 * guiSizeDeviderPopUp) + 'px'
-                mainContainers[i].width = (mainContainerWidth * guiSizeDeviderPopUp) + 'px'
-                mainContainers[i].height = (mainContainerHeight * guiSizeDeviderPopUp) + 'px'
-            } else {
-                annotationOpened = true
-                scene.registerAfterRender(function animateAnotationUp() {
-                    if (ell1Width < ((ellipse1Width * 2.33 + 1) * guiSizeDeviderAnnotation)) {
-                        // console.log(ell1Width, ell1Thick, ell2Width)
-                        ellipses1[i].thickness = ell1Thick;
-                        ellipses1[i].width = ell1Width + "px"
-                        ellipses1[i].height = ell1Width + "px";
-                        // ell1Width += (6.67 * guiSizeDeviderAnnotation)
-                        ell1Width += (((ellipse1Width * 2.33) / 10.49) * guiSizeDeviderAnnotation)
-                        // ell1Thick -= (0.5 * guiSizeDeviderAnnotation)
-                        ell1Thick -= (((ellipse1Width * 2.33) / 140) * guiSizeDeviderAnnotation)
-
-                        ellipses2[i].width = ell2Width + "px"
-                        ellipses2[i].height = ell2Width + "px";
-                        // ell2Width += (5 * guiSizeDeviderAnnotation)
-                        ell2Width += (((ellipse1Width * 2.33) / 14) * guiSizeDeviderAnnotation)
-                    }
-                    // mainContainers[i].alpha = mainAlpha
-                    //mainAlpha += 0.2
-                    if (mainWidth < ((mainContainerWidth + 1) * guiSizeDeviderPopUp) || (mainHeight < (mainContainerHeight + 1) * guiSizeDeviderPopUp)) {
-                        mainContainers[i].width = mainWidth + "px"
-                        mainContainers[i].height = mainHeight + "px"
-                        // console.log(mainWidth, mainHeight)
-                        mainWidth += ((mainContainerWidth / 5) * guiSizeDeviderPopUp)
-                        mainHeight += ((mainContainerWidth / 11.67) * guiSizeDeviderPopUp)
-                    }
-                });
-            }
-        } else {
-            // console.log(i)
-            // ellipses1[i].thickness = (5 * guiSizeDeviderAnnotation);
-            ellipses1[i].thickness = ((ellipse1Thickness * 0.625) * guiSizeDeviderAnnotation);
-            // ellipses1[i].width = (70 * guiSizeDeviderAnnotation) + "px"
-            ellipses1[i].width = ((ellipse1Width * 2.33) * guiSizeDeviderAnnotation) + "px"
-            // ellipses1[i].height = (70 * guiSizeDeviderAnnotation) + "px";
-            ellipses1[i].height = ((ellipse1Height * 2.33) * guiSizeDeviderAnnotation) + "px";
-
-            // ellipses2[i].width = (30 * guiSizeDeviderAnnotation) + "px"
-            // ellipses2[i].height = (30 * guiSizeDeviderAnnotation) + "px";
-            ellipses2[i].width = (ellipse2Width * guiSizeDeviderAnnotation) + "px"
-            ellipses2[i].height = (ellipse2Height * guiSizeDeviderAnnotation) + "px";
-
-
-            // mainContainers[i].width = (350 * guiSizeDeviderPopUp) + 'px'
-            // mainContainers[i].height = (150 * guiSizeDeviderPopUp) + 'px'
-            mainContainers[i].width = (mainContainerWidth * guiSizeDeviderPopUp) + 'px'
-            mainContainers[i].height = (mainContainerHeight * guiSizeDeviderPopUp) + 'px'
-        }
-    }
-
-    function anotationClosed(i) {
-        annotationOpened = false
-        anotEntered[i] = false
-        mainContEntered[i] = false
-        scene.onAfterRenderObservable.clear();
-        // console.log(i)
-        ellipses1[i].thickness = (ellipse1Thickness * guiSizeDeviderAnnotation);
-        ellipses1[i].width = (ellipse1Width * guiSizeDeviderAnnotation) + "px"
-        ellipses1[i].height = (ellipse1Height * guiSizeDeviderAnnotation) + "px";
-
-        ellipses2[i].width = 0 + "px"
-        ellipses2[i].height = 0 + "px";
-
-        // mainContainers[i].alpha = 0
-        mainContainers[i].width = 0 + 'px'
-        mainContainers[i].height = 0 + 'px'
-
-        ell1Width = (ellipse1Width * guiSizeDeviderAnnotation);
-        ell1Thick = (ellipse1Thickness * guiSizeDeviderAnnotation)
-        ell2Width = 0;
-        mainAlpha = 0;
-        mainWidth = 0
-        mainHeight = 0
-    }
-    // console.log(coordinatesForDirectons)
-    //anotation animation
-    let annotationForMobOpened = [false]
-    for (let i = 0; i < ellipses1.length; i++) {
-        if (showOnMap[i] === "yes" || showOnMap[i] === "Yes") {
-            if (screen.width > screen.height) {
-                ellipses1[i].onPointerEnterObservable.add(function () {
-                    if (!devMode) {
-                        anotationOpen(i)
-                        canvasZone.style.cursor = "pointer"
-                        anotEntered[i] = true
-                    }
-                });
-                ellipses1[i].onPointerOutObservable.add(function () {
-                    if (!devMode) {
-                        canvasZone.style.cursor = ""
-                        anotEntered[i] = false
-                        setTimeout(() => {
-                            if (!anotEntered[i] && !mainContEntered[i]) {
-                                anotationClosed(i)
-                                annotationForMobOpened = [false]
-                            }
-                        }, 0);
-                    }
-                });
-            }
-            ellipses1[i].onPointerDownObservable.add(function () {
-                if (!devMode) {
-                    toMapCenter.classList.remove("displayNone")
-                    toMapCenter.style.opacity = "1"
-                    cameraTargetAnimation(coordinatesForDirectons[i][0], coordinatesForDirectons[i][1], coordinatesForDirectons[i][2], 15, false)
-                    if (screen.width < screen.height) {
-
-                        for (let j = 0; j < ellipses1.length; j++) {
-                            anotationClosed(j)
-                        }
-                        if (annotationForMobOpened[0] !== i) {
-                            anotationOpen(i)
-                            annotationForMobOpened = [i]
-                        } else {
-                            annotationForMobOpened = [false]
-                        }
-                    }
-                }
-            });
-        }
-    }
-
-    toMapCenter.onclick = () => {
-        // toMapCenter.classList.add("displayNone")
-        // toMapCenter.style.opacity = "0"
-        if (screen.width > screen.height) {
-            cameraTargetAnimation(8, -0.03, 15.18, 20, true)
-        } else {
-            cameraTargetAnimation(8, -0.03, 15.18, 30, true)
-        }
-        for (let i = 0; i < mainContainers.length; i++) {
-            anotationClosed(i)
-            annotationForMobOpened = [false]
-        }
-    }
-
-    for (let i = 0; i < mainContainers.length; i++) {
-        if (showOnMap[i] === "yes" || showOnMap[i] === "Yes") {
-            mainContainers[i].onPointerEnterObservable.add(function () {
-                if (!devMode) {
-                    mainContEntered[i] = true
-                }
-            });
-            mainContainers[i].onPointerOutObservable.add(function () {
-                if (!devMode) {
-                    mainContEntered[i] = false
-                    setTimeout(() => {
-                        if (!anotEntered[i] && !mainContEntered[i]) {
-                            anotationClosed(i)
-                            annotationForMobOpened = [false]
-                        }
-                    }, 0);
-                }
-            });
-            seeDetailsButtons[i].onPointerEnterObservable.add(function () {
-                if (!devMode) {
-                    canvasZone.style.cursor = "pointer"
-                }
-            });
-            seeDetailsButtons[i].onPointerOutObservable.add(function () {
-                if (!devMode) {
-                    canvasZone.style.cursor = ""
-                }
-            });
-            seeDetailsButtons[i].onPointerUpObservable.add(function () {
-                if (!devMode) {
-                    anotationClosed(i)
-                    showPopUp(i)
-                    annotationForMobOpened = [false]
-                }
-            });
-        }
-    }
-
-
-    //GET COORDINATES FROM CLICK//////////////////////////////////////////////////
-    let foundCoordinates = []
-    let copiedCoordinates;
-
-    // if (devMode) {
-    let clickObsv
-    function activateClick() {
-        clickObsv = scene.onPointerObservable.add((eventData) => {
-            // console.log(eventData.event.button)
-            if (eventData.pickInfo.pickedPoint && eventData.event.button === 0) {
-                // Do something with the pickedPoint vector
-                // console.log(eventData.pickInfo.pickedPoint.x.toFixed(2), eventData.pickInfo.pickedPoint.y.toFixed(2), eventData.pickInfo.pickedPoint.z.toFixed(2))
-                foundCoordinates[0] = eventData.pickInfo.pickedPoint.x.toFixed(2)
-                foundCoordinates[1] = eventData.pickInfo.pickedPoint.y.toFixed(2)
-                foundCoordinates[2] = eventData.pickInfo.pickedPoint.z.toFixed(2)
-                copiedCoordinates = foundCoordinates.join(',')
-                // console.log(copiedCoordinates)
-                navigator.clipboard.writeText(copiedCoordinates);
-                devPopUp.innerHTML = "Location Copied!"
-                setTimeout(() => {
-                    devPopUp.innerHTML = "Click to select location"
-                }, 2000);
-            }
-        });
-    }
-
-    let cameraOn = 0;
-    let devMode = false;
-    document.addEventListener("keydown", (e) => {
-        if (e.key === 'v') {
-            if (e.repeat) return;
-            // console.log("down")
-            activateClick()
-            canvasZone.classList.add("devMode")
-            devPopUp.classList.remove("displayNone")
-        }
-        if (e.key === 'c') {
-            if (cameraOn == 0) {
-                devMode = true;
-                cameraOn = 1
-                scene.activeCamera = scene.cameras[1]
-                devCamera.attachControl(true);
-                camera.detachControl(true);
-            } else {
-                devMode = false;
-                cameraOn = 0
-                scene.activeCamera = scene.cameras[0]
-                devCamera.detachControl(true);
-                camera.attachControl(true);
-            }
-        }
-    })
-    document.addEventListener("keyup", (e) => {
-        if (e.key === 'v') {
-            // console.log("up")
-            scene.onPointerObservable.remove(clickObsv)
-            canvasZone.classList.remove("devMode")
-            devPopUp.classList.add("displayNone")
-        }
-    })
-
-    let toMapCenterVisible = false
-    //MOUSE FOR PROJECT PART OF PAGE
-    if (screen.width > screen.height) {
-        scene.onBeforeRenderObservable.add(function () {
-            // followMouse()
-            //center icon visibility
-            if (!toMapCenterVisible) {
-                if (camera.inertialRadiusOffset !== 0) {
-                    toMapCenterVisible = true
-                    toMapCenter.classList.remove("displayNone")
-                    toMapCenter.style.opacity = "1"
-                }
-            }
-        })
-    } else {
-        toMapCenterVisible = true
-        toMapCenter.classList.remove("displayNone")
-        toMapCenter.style.opacity = "1"
-    }
-    // scene.debugLayer.show({
-    //     embedMode: true,
-    //     initialTab: 2,
-    //     overlay: true
-    // });
-    //END/////////////////////////////////////////////////////////////////////////////////////////////////
-    // //for loading
-    // //for loading
-    scene.executeWhenReady(() => {
-        engine.hideLoadingUI();
-        engine.runRenderLoop(() => {
-            //mobile to look nice
-            engine.setHardwareScalingLevel(1 / window.devicePixelRatio);
-            engine.adaptToDeviceRatio = true;
-            scene.render();
-        });
-        //if (screen.width < screen.height) 
-        setTimeout(() => {
-            engine.stopRenderLoop()
-        }, 100);
-    });
-
-
-    //SWITCHER ON SLICK
-    switcher.onclick = () => {
-        if (!mapOpen) {
-            mapOpen = true
-            // strLineBottom.style.opacity = strLineTop.style.opacity = hrLineRight.style.opacity = hrLineLeft.style.opacity = projectCursor.style.opacity = projectCursorBckg.style.opacity = "0"
-            mainContainerMapTL.play()
-            mainContainerProjectsTL.play()
-            switcherTL.play()
-            setTimeout(() => {
-                switcher.innerHTML = switcherGoToPro
-                switcher.style.top = "auto"
-                if (screen.width > screen.height) {
-                    switcher.style.bottom = "0"
-                } else {
-                    switcher.style.bottom = "50px"
-                }
-                switcherTL.reverse()
-                closeProjectsPage()
-            }, 500);
-            engine.runRenderLoop(() => {
-                // mobile to look nice
-                engine.setHardwareScalingLevel(1 / window.devicePixelRatio);
-                engine.adaptToDeviceRatio = true;
-                scene.render();
-            });
-        } else {
-            mapOpen = false
-            mainContainerMapTL.reverse()
-            mainContainerProjectsTL.reverse()
-            switcherTL.play()
-            setTimeout(() => {
-                switcher.innerHTML = switcherGoToMap
-                switcher.style.bottom = "auto"
-                switcher.style.top = "0"
-                switcherTL.reverse()
-                // strLineBottom.style.opacity = strLineTop.style.opacity = hrLineRight.style.opacity = hrLineLeft.style.opacity = projectCursor.style.opacity = projectCursorBckg.style.opacity = "1"
-            }, 500);
-            engine.stopRenderLoop()
-        }
-    }
-
-    ///////////////////////////////////////////////////////////////////////////////////////////
-    return scene;
-};
-
-window.initFunction = async function () {
-    var asyncEngineCreation = async function () {
-        try {
-            return createDefaultEngine();
-        } catch (e) {
-            console.log("the available createEngine function failed. Creating the default engine instead");
-            return createDefaultEngine();
-        }
-    }
-
-    window.engine = await asyncEngineCreation();
-    if (!engine) throw 'engine should not be null.';
-    startRenderLoop(engine, canvas);
-    window.scene = createScene();
-};
-initFunction().then(() => {
-    sceneToRender = scene
-});
-
-// Resize
-window.addEventListener("resize", function () {
-    engine.resize();
-});
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ///////////////////////////////////////////////////////////////////////////////////////////
+// //MAP SECTION///////////////////////////////////////////////////////////////////////////////
+// let fps = document.createElement("div")
+// projectsWrap.appendChild(fps)
+// fps.classList.add("fps")
+// fps.innerHTML = "fps"
+
+// let loadingPage = document.createElement("div")
+// projectsWrap.appendChild(loadingPage)
+// loadingPage.classList.add("loadingPage")
+
+// let loadingSpinner = document.createElement("div")
+// document.getElementsByClassName('loadingPage')[0].appendChild(loadingSpinner)
+// loadingSpinner.classList.add("loadingSpinner")
+
+// let loadingPercentages = document.createElement("div")
+// document.getElementsByClassName('loadingPage')[0].appendChild(loadingPercentages)
+// loadingPercentages.classList.add("loadingPercentages")
+
+// let canvasZone = document.createElement("div")
+// mainContainerMap.appendChild(canvasZone)
+// canvasZone.classList.add("canvasZone")
+
+// let canvas = document.createElement("canvas")
+// canvasZone.appendChild(canvas)
+// canvas.classList.add("renderCanvas")
+
+// let devPopUp = document.createElement("div")
+// mainContainerMap.appendChild(devPopUp)
+// devPopUp.classList.add("devPopUp", "displayNone")
+// devPopUp.innerHTML = "Click to select location"
+
+// let toMapCenter = document.createElement("div")
+// mainContainerMap.appendChild(toMapCenter)
+// toMapCenter.classList.add("toMapCenter", "displayNone")
+// function getFPS() {
+//     setInterval(function () {
+//         // fps.innerHTML = `${engine.getFps().toFixed(0)} fps`
+//         fps.innerHTML = `${engine.getFps().toFixed(2)} fps`
+//     }, 1000)
+// }
+
+// // var canvas = document.getElementById("renderCanvas");
+
+// var startRenderLoop = function (engine, canvas) {
+//     engine.runRenderLoop(function () {
+//         if (sceneToRender && sceneToRender.activeCamera) {
+//             sceneToRender.render();
+//         }
+//     });
+// }
+
+// //LOADING
+// BABYLON.DefaultLoadingScreen.prototype.displayLoadingUI = function () {
+//     if (document.getElementById('customLoadingScreenDiv')) {
+//         // Do not add a loading screen if there is already one
+//         document.getElementById('customLoadingScreenDiv').style.display = 'initial';
+//         return;
+//     }
+// };
+// BABYLON.DefaultLoadingScreen.prototype.hideLoadingUI = function () {
+//     loadingPage.remove();
+// };
+// //end of loading
+
+// var engine = null;
+// var scene = null;
+// var sceneToRender = null;
+// var createDefaultEngine = function () { return new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true, disableWebGL2Support: false }); };
+// var createScene = async function () {
+
+//     const RIGHT_HANDED_SYSTEM = false;
+
+//     //loading
+//     engine.displayLoadingUI();
+//     //to work on macbook
+//     engine.disableTextureBindingOptimization = true;
+//     // This creates a basic Babylon Scene object (non-mesh)
+//     var scene = new BABYLON.Scene(engine);
+//     scene.useRightHandedSystem = RIGHT_HANDED_SYSTEM;
+//     // scene.clearColor = BABYLON.Color3.FromHexString("#000000");
+//     scene.clearColor = BABYLON.Color3.FromHexString("#1b1b1b");
+//     //get fps
+//     document.addEventListener("keydown", (e) => {
+//         if (e.key === 'f') {
+//             getFPS()
+//             fps.style.display = "block"
+//         }
+//     })
+
+//     // //CAMERA
+//     function cameraTargetAnimation(x, y, z, newCameraRadius, centerMap) {
+//         if (screen.width < screen.height && !centerMap) {
+//             x = x + 2
+//         }
+//         //aniamtion to change camera target position
+//         var animationCameraTarget = new BABYLON.Animation(
+//             "myAnimationcamera",
+//             "position",
+//             60,
+//             BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
+//             BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+//         );
+//         const keyFrames = [];
+//         keyFrames.push({
+//             frame: 0,
+//             value: cameraTarget.position.clone(),
+//         });
+//         keyFrames.push({
+//             frame: 120,
+//             value: new BABYLON.Vector3(x, y, z),
+//         });
+//         animationCameraTarget.setKeys(keyFrames);
+//         const easingFun2 = new BABYLON.CubicEase();
+//         easingFun2.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
+//         animationCameraTarget.setEasingFunction(easingFun2);
+//         cameraTarget.animations.push(animationCameraTarget);
+//         //call animation
+//         scene.beginAnimation(cameraTarget, 0, 120, false);
+
+//         //radius
+//         //radius  animation
+//         let radiusAnimation = new BABYLON.Animation(
+//             "radiusAnimation",
+//             "radius",
+//             60,
+//             BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+//             BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+//         );
+//         let radiusKeyFrames = [];
+//         radiusKeyFrames.push({
+//             frame: 0,
+//             value: camera.radius,
+//         });
+//         radiusKeyFrames.push({
+//             frame: 120,
+//             value: newCameraRadius,
+//         });
+//         radiusAnimation.setKeys(radiusKeyFrames);
+//         const easingFun = new BABYLON.CubicEase();
+//         easingFun.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
+//         radiusAnimation.setEasingFunction(easingFun);
+//         camera.animations.push(radiusAnimation);
+//         //call radius animation
+//         scene.beginAnimation(camera, 0, 120, false);
+
+//         let alphaAnimation = new BABYLON.Animation(
+//             "alphaAnimation",
+//             "alpha",
+//             60,
+//             BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+//             BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+//         );
+//         let alphaKeyFrames = [];
+//         alphaKeyFrames.push({
+//             frame: 0,
+//             value: camera.alpha,
+//         });
+//         alphaKeyFrames.push({
+//             frame: 120,
+//             value: 1.32,
+//         });
+//         alphaAnimation.setKeys(alphaKeyFrames);
+//         const easingFun3 = new BABYLON.CubicEase();
+//         easingFun3.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
+//         alphaAnimation.setEasingFunction(easingFun3);
+//         camera.animations.push(alphaAnimation);
+//         //call alpha animation
+//         scene.beginAnimation(camera, 0, 120, false);
+//     }
+
+//     let camera = new BABYLON.ArcRotateCamera(
+//         'camera1',
+//         Math.PI / 2,
+//         Math.PI / 2,
+//         0,
+//         new BABYLON.Vector3(0, 0, 0),
+//         scene
+//     );
+//     camera.attachControl(canvas, true);
+//     camera.inputs.attached.keyboard.detachControl();
+
+//     camera.setPosition(new BABYLON.Vector3(-3.99, 20, 15.18))
+//     if (screen.width < screen.height) {
+//         camera.setPosition(new BABYLON.Vector3(-3.99, 30, 15.18))
+//     }
+
+//     camera.minZ = 0.1;
+//     camera.lowerRadiusLimit = 5;
+//     camera.upperRadiusLimit = 50;//80
+//     camera.wheelDeltaPercentage = 0.01;
+//     // camera.lowerBetaLimit = 0.5;
+//     camera.upperBetaLimit = 0.5;
+//     camera.beta = 0.5
+
+//     // camera target
+//     var cameraTarget = new BABYLON.MeshBuilder.CreateBox(
+//         "cameraTarget",
+//         { width: 1, height: 1, depth: 1 },
+//         scene
+//     );
+//     cameraTarget.position = new BABYLON.Vector3(8, -0.03, 15.18);
+//     camera.target = cameraTarget
+//     cameraTarget.isVisible = false
+
+//     camera.alpha = 1.32
+
+//     var devCamera = new BABYLON.FreeCamera("devCamera", new BABYLON.Vector3(-78, 5, 0), scene);
+//     devCamera.rotation.y = 1.57;
+
+//     // var camera = new BABYLON.FreeCamera("camera", new BABYLON.Vector3(0, 2, -10), scene);
+
+//     // // This targets the camera to scene origin
+//     // camera.setTarget(BABYLON.Vector3.Zero());
+
+//     // // This attaches the camera to the canvas
+//     // camera.attachControl(canvas, true);
+
+
+//     // This creates a light, aiming 0,1,0 - to the sky (non-mesh)
+//     var light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
+
+//     // Default intensity is 1. Let's dim the light a small amount
+//     light.intensity = 0.7;
+
+//     //LOAD MESHES
+//     let loadePercent = 0;
+//     // const box = BABYLON.MeshBuilder.CreateBox("box", { height: 5, width: 5, depth: 5 });
+
+//     let sceneLoaded = [false]
+//     let result = await Promise.all([
+//         BABYLON.SceneLoader.ImportMeshAsync(
+//             "",
+//             // "https://raw.githubusercontent.com/quincecreative/logrodProjectPage/gh-pages/Minhen5.glb",
+//             // "https://work.quincemedia.com/logrod-project-page/Minhen5.glb",
+//             "Minhen5.glb",
+//             null,
+//             scene,
+//             (evt) => {
+//                 if (evt.lengthComputable) {
+//                     loadePercent = (evt.loaded * 100) / evt.total;
+//                     loadePercent = loadePercent.toFixed();
+//                     // console.log(evt)
+//                 } else {
+//                     loadePercent = (evt.loaded * 100) / 24955036;
+//                     loadePercent = loadePercent.toFixed();
+//                 }
+//                 // console.log(loadingPercentages)
+//                 loadingPercentages.innerHTML = `${loadePercent}%`
+//             }
+//         ),
+//     ]);
+
+//     let mapaMesh = result[0];
+
+//     let mapaRoot = result[0].meshes[0];
+
+//     // scene.onPointerObservable.add((pointerInfo) => {
+
+//     //     switch (pointerInfo.type) {
+//     //         //   case PointerEventTypes.POINTERDOWN:
+//     //         //     mainContainer.style.cursor = "grabbing"
+//     //         //     break;
+//     //         //   case PointerEventTypes.POINTERUP:
+//     //         //     mainContainer.style.cursor = "grab"
+//     //         //     break;
+//     //         case BABYLON.PointerEventTypes.POINTERPICK:
+//     //             console.log(pointerInfo.pickInfo)
+//     //             // for (let i = 0; i < mainContainers.length; i++) {
+//     //             //     anotationClosed(i)
+//     //             // }
+//     //             break;
+//     //     }
+//     // });
+
+
+
+//     mapaRoot.position = new BABYLON.Vector3(0, 0, 0)
+
+//     mapaRoot.addRotation(0, 0, 0)
+
+//     let mapRootClone = mapaRoot.clone()
+//     mapRootClone.position = new BABYLON.Vector3(0, 0, 75.88)
+
+//     mapRootClone.scaling = new BABYLON.Vector3(1, 1, 1)
+
+//     // //AO tex 3
+//     // // scene.getMeshByName("Bouildings").material.ambientTexture =
+//     // //     new BABYLON.Texture(
+//     // //         "https://raw.githubusercontent.com/quincecreative/logrodProjectPage/gh-pages/Buildings AO3-2.jpg",
+//     // //         //"https://work.quincemedia.com/logrod-project-page/Buildings AO3-2.jpg",
+//     // //         scene
+//     // //     );
+//     // // scene.getMeshByName("Bouildings").material.ambientTexture.uScale = 1; //and/or the following for vScale:
+//     // // scene.getMeshByName("Bouildings").material.ambientTexture.vScale = -1; //(-1.0 or some other value)
+
+//     // GUI
+//     let ellipses1 = []
+//     let ellipses2 = []
+//     let mainContainers = []
+//     let seeDetailsButtons = []
+//     let posMeshes = []
+
+//     var advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI", true, scene);
+
+//     let guiSizeDeviderPopUp = 1.5
+//     let guiSizeDeviderAnnotation = 1
+
+//     /////SIZE OF ANNOTATION BASED ON SCREEN WIDHT
+//     let sizeDeviderAnn = 1
+//     let sizeDeviderCon = 1
+
+//     if (screen.width < 1501 && screen.width > screen.height) sizeDeviderAnn = sizeDeviderCon = 0.75
+//     if (screen.width < 1201 && screen.width > screen.height) sizeDeviderAnn = sizeDeviderCon = 0.625
+
+//     if (screen.width < 500 && screen.width < screen.height) {
+//         sizeDeviderAnn = 3
+//         sizeDeviderCon = 1.5
+//     }
+//     // if (screen.width < screen.height) {
+//     //     if (window.devicePixelRatio === 3) {
+//     //         sizeDeviderAnn = 3
+//     //         sizeDeviderCon = 1.5
+//     //     }
+//     //     if (window.devicePixelRatio === 2) {
+//     //         sizeDeviderAnn = 2
+//     //         sizeDeviderCon = 1
+//     //     }
+//     // }
+
+
+//     let mainContainerWidth = 350 * sizeDeviderCon
+//     let mainContainerHeight = 150 * sizeDeviderCon
+//     let mainContainerOffsetX = -175 * sizeDeviderCon
+//     let mainContainerOffsetY = 75 * sizeDeviderCon
+
+//     let imageContainerWidth;
+//     let imageContainerHeight;
+//     let imageWidth;
+//     let imageHeight;
+
+//     imageContainerWidth = imageContainerHeight = imageWidth = imageHeight = 150 * sizeDeviderCon
+
+//     ////title
+//     let titleContainerWidth = 190 * sizeDeviderCon
+//     let titleContainerHeight = 45 * sizeDeviderCon
+//     let titleContainerTop = 15 * sizeDeviderCon
+//     let titleContainerRight = 10 * sizeDeviderCon
+//     let titleFontSize = 17 * sizeDeviderCon
+//     let titleLineSpasing = -4 * sizeDeviderCon
+//     //adress
+//     let adressContainerWidth = 190 * sizeDeviderCon
+//     let adressContainerHeight = 40 * sizeDeviderCon
+//     let adressContainerTop = 60 * sizeDeviderCon
+//     let adressContainerRight = 10 * sizeDeviderCon
+//     let adressFontSize = 12 * sizeDeviderCon
+//     let adressLineSpacing = -5 * sizeDeviderCon
+//     //button
+//     let buttonContainerWidth = 190 * sizeDeviderCon
+//     let buttonContainerHeight = 50 * sizeDeviderCon
+//     let buttonContainerTop = 95 * sizeDeviderCon
+//     let seeDetailsWidth = 120 * sizeDeviderCon
+//     let seeDetailsFontSize = 15 * sizeDeviderCon
+//     let seeDetailsHeight = 40 * sizeDeviderCon
+
+//     //ellipses
+//     let ellipse1Width = 30 * sizeDeviderAnn
+//     let ellipse1Height = 30 * sizeDeviderAnn
+//     let ellipse1Thickness = 8 * sizeDeviderAnn
+
+//     let ellipse2Width = 30 * sizeDeviderAnn
+//     let ellipse2Height = 30 * sizeDeviderAnn
+
+
+
+
+//     if (browser != "Chrome" && browser != "Opera" && browser != "Edge") {
+//         if (screen.width > 1500) {
+//             advancedTexture.idealWidth = 1500;
+//             advancedTexture.renderAtIdealSize = true;
+//             guiSizeDeviderPopUp = 1.125//0.75
+//             guiSizeDeviderAnnotation = 0.75
+//             titleLineSpasing = titleLineSpasing
+//         }
+//     }
+
+//     //create anotation
+//     function createAnotationCont(posMesh, imageSrc, proTitle, proAdress, i) {
+//         if (showOnMap[i] === "yes" || showOnMap[i] === "Yes") {
+//             //main container
+//             var mainContainer = new BABYLON.GUI.Rectangle();
+//             mainContainer.width = 0 + "px";
+//             mainContainer.height = 0 + "px";
+//             // mainContainer.cornerRadius = 20;
+//             mainContainer.color = "Orange";
+//             mainContainer.thickness = 0;
+//             mainContainer.background = "white";
+//             advancedTexture.addControl(mainContainer);
+//             mainContainer.linkWithMesh(posMesh);
+//             mainContainer.linkOffsetX = (mainContainerOffsetX * guiSizeDeviderPopUp) + "px"
+//             mainContainer.linkOffsetY = -(mainContainerOffsetY * guiSizeDeviderPopUp) + "px"
+//             // mainContainer.alpha = 0;
+//             mainContainers.push(mainContainer)
+
+//             //image container
+//             var imageContainer = new BABYLON.GUI.Rectangle();
+//             imageContainer.width = (imageContainerWidth * guiSizeDeviderPopUp) + "px";
+//             imageContainer.height = (imageContainerHeight * guiSizeDeviderPopUp) + "px";
+//             imageContainer.color = "Orange";
+//             imageContainer.thickness = 0;
+//             imageContainer.background = "white";
+//             imageContainer.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+//             mainContainer.addControl(imageContainer);
+//             //image
+//             var image = new BABYLON.GUI.Image("image", imageSrc);
+//             image.width = (imageWidth * guiSizeDeviderPopUp) + "px";
+//             image.height = (imageHeight * guiSizeDeviderPopUp) + "px";
+//             image.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+//             // image.stretch = BABYLON.GUI.Image.STRETCH_EXTEND
+//             imageContainer.addControl(image);
+//             //title container
+//             var titleContainer = new BABYLON.GUI.Rectangle();
+//             titleContainer.width = (titleContainerWidth * guiSizeDeviderPopUp) + "px";
+//             titleContainer.height = (titleContainerHeight * guiSizeDeviderPopUp) + "px";
+//             titleContainer.color = "Orange";
+//             titleContainer.thickness = 0;
+//             // titleContainer.background = "red";
+//             titleContainer.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
+//             titleContainer.verticalAlignment =
+//                 BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
+//             titleContainer.top = (titleContainerTop * guiSizeDeviderPopUp) + "px"
+//             titleContainer.paddingRight = (titleContainerRight * guiSizeDeviderPopUp) + "px"
+//             mainContainer.addControl(titleContainer);
+//             //title
+//             var title = new BABYLON.GUI.TextBlock();
+//             title.color = "Black";
+//             title.fontSize = (titleFontSize * guiSizeDeviderPopUp) + "px"
+//             title.textHorizontalAlignment = 0
+//             title.textVerticalAlignment = 2
+//             title.text = proTitle;
+//             title.textWrapping = true;
+//             title.lineSpacing = (titleLineSpasing) + "px";
+//             title.drawOutline = true;
+//             title.outlineColor = "black";
+//             title.outlineWidth = (0.5 * guiSizeDeviderPopUp);
+//             titleContainer.addControl(title);
+//             //adress container
+//             var adressContainer = new BABYLON.GUI.Rectangle();
+//             adressContainer.width = (adressContainerWidth * guiSizeDeviderPopUp) + "px";
+//             adressContainer.height = (adressContainerHeight * guiSizeDeviderPopUp) + "px";
+//             adressContainer.color = "Orange";
+//             adressContainer.thickness = 0;
+//             // adressContainer.background = "blue";
+//             adressContainer.top = (adressContainerTop * guiSizeDeviderPopUp) + "px"
+//             adressContainer.paddingRight = (adressContainerRight * guiSizeDeviderPopUp) + "px"
+//             adressContainer.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
+//             adressContainer.verticalAlignment =
+//                 BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
+//             mainContainer.addControl(adressContainer);
+//             //adress
+//             var adress = new BABYLON.GUI.TextBlock();
+//             adress.color = "Gray";
+//             adress.fontSize = (adressFontSize * guiSizeDeviderPopUp) + "px"
+//             adress.textHorizontalAlignment = 0
+//             adress.textVerticalAlignment = 0
+//             adress.text = proAdress;
+//             adress.textWrapping = true;
+//             adress.lineSpacing = (adressLineSpacing * guiSizeDeviderPopUp) + "px";
+//             adressContainer.addControl(adress);
+//             //button container
+//             var buttonContainer = new BABYLON.GUI.Rectangle();
+//             buttonContainer.width = (buttonContainerWidth * guiSizeDeviderPopUp) + "px";
+//             buttonContainer.height = (buttonContainerHeight * guiSizeDeviderPopUp) + "px";
+//             buttonContainer.color = "Orange";
+//             buttonContainer.thickness = 0;
+//             // buttonContainer.background = "blue";
+//             buttonContainer.top = (buttonContainerTop * guiSizeDeviderPopUp) + "px"
+//             buttonContainer.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
+//             buttonContainer.verticalAlignment =
+//                 BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
+//             mainContainer.addControl(buttonContainer);
+//             //button
+//             var seeDetails = BABYLON.GUI.Button.CreateSimpleButton("seeDetails", "See Details");
+//             // var seeDetailsGer = BABYLON.GUI.Button.CreateSimpleButton("seeDetails", "Details Ansehen");
+//             seeDetails.width = (seeDetailsWidth * guiSizeDeviderPopUp) + "px"
+//             seeDetails.fontSize = (seeDetailsFontSize * guiSizeDeviderPopUp) + "px"
+//             seeDetails.height = (seeDetailsHeight * guiSizeDeviderPopUp) + "px";
+//             seeDetails.color = "white";
+//             seeDetails.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+//             // button1.cornerRadius = 20;
+//             seeDetails.background = "black";
+//             buttonContainer.addControl(seeDetails);
+//             seeDetailsButtons.push(seeDetails)
+//         } else {
+//             mainContainers.push("")
+//             seeDetailsButtons.push("")
+//         }
+//     }
+
+//     function createAnotation(corX, corY, corZ, i) {
+//         if (showOnMap[i] === "yes" || showOnMap[i] === "Yes") {
+//             //fake possition mesh
+//             let posMesh = new BABYLON.MeshBuilder.CreateBox(
+//                 "posMesh",
+//                 { width: 0.1, height: 0.1, depth: 0.1 },
+//                 scene
+//             );
+//             posMesh.position = new BABYLON.Vector3(corX, corY, corZ);
+//             posMesh.isVisible = false
+//             posMeshes.push(posMesh)
+//             //create ellipses
+//             //inside
+//             var ellipse2 = new BABYLON.GUI.Ellipse();
+//             ellipse2.width = 0 + "px"
+//             ellipse2.height = 0 + "px";
+//             ellipse2.color = "white";
+//             // ellipse2.thickness = 15;
+//             ellipse2.background = "white";
+//             advancedTexture.addControl(ellipse2);
+//             ellipse2.linkWithMesh(posMesh);
+//             ellipses2.push(ellipse2)
+//             //outside
+//             var ellipse1 = new BABYLON.GUI.Ellipse();
+//             ellipse1.width = (ellipse1Width * guiSizeDeviderAnnotation) + "px"
+//             // ellipse1.width = 25 + "px"
+//             ellipse1.height = (ellipse1Height * guiSizeDeviderAnnotation) + "px";
+//             // ellipse1.height = 25 + "px";
+//             ellipse1.color = "white";
+//             ellipse1.thickness = (ellipse1Thickness * guiSizeDeviderAnnotation);
+//             // ellipse1.thickness = 7;
+//             ellipse1.background = "transparent";
+//             advancedTexture.addControl(ellipse1);
+//             ellipse1.linkWithMesh(posMesh);
+//             ellipses1.push(ellipse1)
+//         } else {
+//             posMeshes.push("")
+//             ellipses2.push("")
+//             ellipses1.push("")
+//         }
+//     }
+
+//     function toNum(elm) {
+//         return Number(elm)
+//     }
+
+//     let coordinatesForDirectons = []
+
+//     let anotEntered = []
+//     let mainContEntered = []
+
+//     for (let i = 0; i < coordinates.length; i++) {
+//         let coordinateString = coordinates[i].split(",")
+//         let coordinatesNum = coordinateString.map(toNum)
+//         coordinatesForDirectons[i] = [coordinatesNum[0], coordinatesNum[1], coordinatesNum[2]]
+//         createAnotation(coordinatesNum[0], coordinatesNum[1], coordinatesNum[2], i)
+//     }
+
+//     for (let i = 0; i < coordinates.length; i++) {
+//         createAnotationCont(posMeshes[i], projectThumbnailsSrc[i], projectTitlesNames[i], projectAdresses[i], i)
+//         anotEntered.push(false)
+//         mainContEntered.push(false)
+//     }
+
+
+//     let ell1Width = (ellipse1Width * guiSizeDeviderAnnotation);
+//     let ell1Thick = (ellipse1Thickness * guiSizeDeviderAnnotation)
+//     let ell2Width = 0;
+//     let mainAlpha = 0;
+//     let mainWidth = 0
+//     let mainHeight = 0
+//     let annotationOpened = false;
+
+//     function anotationOpen(i) {
+//         if (screen.width > screen.height) {
+//             if (annotationOpened) {
+//                 // console.log(i)
+//                 // ellipses1[i].thickness = (5 * guiSizeDeviderAnnotation);
+//                 ellipses1[i].thickness = ((ellipse1Thickness * 0.625) * guiSizeDeviderAnnotation);
+//                 // ellipses1[i].width = (70 * guiSizeDeviderAnnotation) + "px"
+//                 ellipses1[i].width = ((ellipse1Width * 2.33) * guiSizeDeviderAnnotation) + "px"
+//                 // ellipses1[i].height = (70 * guiSizeDeviderAnnotation) + "px";
+//                 ellipses1[i].height = ((ellipse1Height * 2.33) * guiSizeDeviderAnnotation) + "px";
+
+//                 // ellipses2[i].width = (30 * guiSizeDeviderAnnotation) + "px"
+//                 // ellipses2[i].height = (30 * guiSizeDeviderAnnotation) + "px";
+//                 ellipses2[i].width = (ellipse2Width * guiSizeDeviderAnnotation) + "px"
+//                 ellipses2[i].height = (ellipse2Height * guiSizeDeviderAnnotation) + "px";
+
+
+//                 // mainContainers[i].width = (350 * guiSizeDeviderPopUp) + 'px'
+//                 // mainContainers[i].height = (150 * guiSizeDeviderPopUp) + 'px'
+//                 mainContainers[i].width = (mainContainerWidth * guiSizeDeviderPopUp) + 'px'
+//                 mainContainers[i].height = (mainContainerHeight * guiSizeDeviderPopUp) + 'px'
+//             } else {
+//                 annotationOpened = true
+//                 scene.registerAfterRender(function animateAnotationUp() {
+//                     if (ell1Width < ((ellipse1Width * 2.33 + 1) * guiSizeDeviderAnnotation)) {
+//                         // console.log(ell1Width, ell1Thick, ell2Width)
+//                         ellipses1[i].thickness = ell1Thick;
+//                         ellipses1[i].width = ell1Width + "px"
+//                         ellipses1[i].height = ell1Width + "px";
+//                         // ell1Width += (6.67 * guiSizeDeviderAnnotation)
+//                         ell1Width += (((ellipse1Width * 2.33) / 10.49) * guiSizeDeviderAnnotation)
+//                         // ell1Thick -= (0.5 * guiSizeDeviderAnnotation)
+//                         ell1Thick -= (((ellipse1Width * 2.33) / 140) * guiSizeDeviderAnnotation)
+
+//                         ellipses2[i].width = ell2Width + "px"
+//                         ellipses2[i].height = ell2Width + "px";
+//                         // ell2Width += (5 * guiSizeDeviderAnnotation)
+//                         ell2Width += (((ellipse1Width * 2.33) / 14) * guiSizeDeviderAnnotation)
+//                     }
+//                     // mainContainers[i].alpha = mainAlpha
+//                     //mainAlpha += 0.2
+//                     if (mainWidth < ((mainContainerWidth + 1) * guiSizeDeviderPopUp) || (mainHeight < (mainContainerHeight + 1) * guiSizeDeviderPopUp)) {
+//                         mainContainers[i].width = mainWidth + "px"
+//                         mainContainers[i].height = mainHeight + "px"
+//                         // console.log(mainWidth, mainHeight)
+//                         mainWidth += ((mainContainerWidth / 5) * guiSizeDeviderPopUp)
+//                         mainHeight += ((mainContainerWidth / 11.67) * guiSizeDeviderPopUp)
+//                     }
+//                 });
+//             }
+//         } else {
+//             // console.log(i)
+//             // ellipses1[i].thickness = (5 * guiSizeDeviderAnnotation);
+//             ellipses1[i].thickness = ((ellipse1Thickness * 0.625) * guiSizeDeviderAnnotation);
+//             // ellipses1[i].width = (70 * guiSizeDeviderAnnotation) + "px"
+//             ellipses1[i].width = ((ellipse1Width * 2.33) * guiSizeDeviderAnnotation) + "px"
+//             // ellipses1[i].height = (70 * guiSizeDeviderAnnotation) + "px";
+//             ellipses1[i].height = ((ellipse1Height * 2.33) * guiSizeDeviderAnnotation) + "px";
+
+//             // ellipses2[i].width = (30 * guiSizeDeviderAnnotation) + "px"
+//             // ellipses2[i].height = (30 * guiSizeDeviderAnnotation) + "px";
+//             ellipses2[i].width = (ellipse2Width * guiSizeDeviderAnnotation) + "px"
+//             ellipses2[i].height = (ellipse2Height * guiSizeDeviderAnnotation) + "px";
+
+
+//             // mainContainers[i].width = (350 * guiSizeDeviderPopUp) + 'px'
+//             // mainContainers[i].height = (150 * guiSizeDeviderPopUp) + 'px'
+//             mainContainers[i].width = (mainContainerWidth * guiSizeDeviderPopUp) + 'px'
+//             mainContainers[i].height = (mainContainerHeight * guiSizeDeviderPopUp) + 'px'
+//         }
+//     }
+
+//     function anotationClosed(i) {
+//         annotationOpened = false
+//         anotEntered[i] = false
+//         mainContEntered[i] = false
+//         scene.onAfterRenderObservable.clear();
+//         // console.log(i)
+//         ellipses1[i].thickness = (ellipse1Thickness * guiSizeDeviderAnnotation);
+//         ellipses1[i].width = (ellipse1Width * guiSizeDeviderAnnotation) + "px"
+//         ellipses1[i].height = (ellipse1Height * guiSizeDeviderAnnotation) + "px";
+
+//         ellipses2[i].width = 0 + "px"
+//         ellipses2[i].height = 0 + "px";
+
+//         // mainContainers[i].alpha = 0
+//         mainContainers[i].width = 0 + 'px'
+//         mainContainers[i].height = 0 + 'px'
+
+//         ell1Width = (ellipse1Width * guiSizeDeviderAnnotation);
+//         ell1Thick = (ellipse1Thickness * guiSizeDeviderAnnotation)
+//         ell2Width = 0;
+//         mainAlpha = 0;
+//         mainWidth = 0
+//         mainHeight = 0
+//     }
+//     // console.log(coordinatesForDirectons)
+//     //anotation animation
+//     let annotationForMobOpened = [false]
+//     for (let i = 0; i < ellipses1.length; i++) {
+//         if (showOnMap[i] === "yes" || showOnMap[i] === "Yes") {
+//             if (screen.width > screen.height) {
+//                 ellipses1[i].onPointerEnterObservable.add(function () {
+//                     if (!devMode) {
+//                         anotationOpen(i)
+//                         canvasZone.style.cursor = "pointer"
+//                         anotEntered[i] = true
+//                     }
+//                 });
+//                 ellipses1[i].onPointerOutObservable.add(function () {
+//                     if (!devMode) {
+//                         canvasZone.style.cursor = ""
+//                         anotEntered[i] = false
+//                         setTimeout(() => {
+//                             if (!anotEntered[i] && !mainContEntered[i]) {
+//                                 anotationClosed(i)
+//                                 annotationForMobOpened = [false]
+//                             }
+//                         }, 0);
+//                     }
+//                 });
+//             }
+//             ellipses1[i].onPointerDownObservable.add(function () {
+//                 if (!devMode) {
+//                     toMapCenter.classList.remove("displayNone")
+//                     toMapCenter.style.opacity = "1"
+//                     cameraTargetAnimation(coordinatesForDirectons[i][0], coordinatesForDirectons[i][1], coordinatesForDirectons[i][2], 15, false)
+//                     if (screen.width < screen.height) {
+
+//                         for (let j = 0; j < ellipses1.length; j++) {
+//                             anotationClosed(j)
+//                         }
+//                         if (annotationForMobOpened[0] !== i) {
+//                             anotationOpen(i)
+//                             annotationForMobOpened = [i]
+//                         } else {
+//                             annotationForMobOpened = [false]
+//                         }
+//                     }
+//                 }
+//             });
+//         }
+//     }
+
+//     toMapCenter.onclick = () => {
+//         // toMapCenter.classList.add("displayNone")
+//         // toMapCenter.style.opacity = "0"
+//         if (screen.width > screen.height) {
+//             cameraTargetAnimation(8, -0.03, 15.18, 20, true)
+//         } else {
+//             cameraTargetAnimation(8, -0.03, 15.18, 30, true)
+//         }
+//         for (let i = 0; i < mainContainers.length; i++) {
+//             anotationClosed(i)
+//             annotationForMobOpened = [false]
+//         }
+//     }
+
+//     for (let i = 0; i < mainContainers.length; i++) {
+//         if (showOnMap[i] === "yes" || showOnMap[i] === "Yes") {
+//             mainContainers[i].onPointerEnterObservable.add(function () {
+//                 if (!devMode) {
+//                     mainContEntered[i] = true
+//                 }
+//             });
+//             mainContainers[i].onPointerOutObservable.add(function () {
+//                 if (!devMode) {
+//                     mainContEntered[i] = false
+//                     setTimeout(() => {
+//                         if (!anotEntered[i] && !mainContEntered[i]) {
+//                             anotationClosed(i)
+//                             annotationForMobOpened = [false]
+//                         }
+//                     }, 0);
+//                 }
+//             });
+//             seeDetailsButtons[i].onPointerEnterObservable.add(function () {
+//                 if (!devMode) {
+//                     canvasZone.style.cursor = "pointer"
+//                 }
+//             });
+//             seeDetailsButtons[i].onPointerOutObservable.add(function () {
+//                 if (!devMode) {
+//                     canvasZone.style.cursor = ""
+//                 }
+//             });
+//             seeDetailsButtons[i].onPointerUpObservable.add(function () {
+//                 if (!devMode) {
+//                     anotationClosed(i)
+//                     showPopUp(i)
+//                     annotationForMobOpened = [false]
+//                 }
+//             });
+//         }
+//     }
+
+
+//     //GET COORDINATES FROM CLICK//////////////////////////////////////////////////
+//     let foundCoordinates = []
+//     let copiedCoordinates;
+
+//     // if (devMode) {
+//     let clickObsv
+//     function activateClick() {
+//         clickObsv = scene.onPointerObservable.add((eventData) => {
+//             // console.log(eventData.event.button)
+//             if (eventData.pickInfo.pickedPoint && eventData.event.button === 0) {
+//                 // Do something with the pickedPoint vector
+//                 // console.log(eventData.pickInfo.pickedPoint.x.toFixed(2), eventData.pickInfo.pickedPoint.y.toFixed(2), eventData.pickInfo.pickedPoint.z.toFixed(2))
+//                 foundCoordinates[0] = eventData.pickInfo.pickedPoint.x.toFixed(2)
+//                 foundCoordinates[1] = eventData.pickInfo.pickedPoint.y.toFixed(2)
+//                 foundCoordinates[2] = eventData.pickInfo.pickedPoint.z.toFixed(2)
+//                 copiedCoordinates = foundCoordinates.join(',')
+//                 // console.log(copiedCoordinates)
+//                 navigator.clipboard.writeText(copiedCoordinates);
+//                 devPopUp.innerHTML = "Location Copied!"
+//                 setTimeout(() => {
+//                     devPopUp.innerHTML = "Click to select location"
+//                 }, 2000);
+//             }
+//         });
+//     }
+
+//     let cameraOn = 0;
+//     let devMode = false;
+//     document.addEventListener("keydown", (e) => {
+//         if (e.key === 'v') {
+//             if (e.repeat) return;
+//             // console.log("down")
+//             activateClick()
+//             canvasZone.classList.add("devMode")
+//             devPopUp.classList.remove("displayNone")
+//         }
+//         if (e.key === 'c') {
+//             if (cameraOn == 0) {
+//                 devMode = true;
+//                 cameraOn = 1
+//                 scene.activeCamera = scene.cameras[1]
+//                 devCamera.attachControl(true);
+//                 camera.detachControl(true);
+//             } else {
+//                 devMode = false;
+//                 cameraOn = 0
+//                 scene.activeCamera = scene.cameras[0]
+//                 devCamera.detachControl(true);
+//                 camera.attachControl(true);
+//             }
+//         }
+//     })
+//     document.addEventListener("keyup", (e) => {
+//         if (e.key === 'v') {
+//             // console.log("up")
+//             scene.onPointerObservable.remove(clickObsv)
+//             canvasZone.classList.remove("devMode")
+//             devPopUp.classList.add("displayNone")
+//         }
+//     })
+
+//     let toMapCenterVisible = false
+//     //MOUSE FOR PROJECT PART OF PAGE
+//     if (screen.width > screen.height) {
+//         scene.onBeforeRenderObservable.add(function () {
+//             // followMouse()
+//             //center icon visibility
+//             if (!toMapCenterVisible) {
+//                 if (camera.inertialRadiusOffset !== 0) {
+//                     toMapCenterVisible = true
+//                     toMapCenter.classList.remove("displayNone")
+//                     toMapCenter.style.opacity = "1"
+//                 }
+//             }
+//         })
+//     } else {
+//         toMapCenterVisible = true
+//         toMapCenter.classList.remove("displayNone")
+//         toMapCenter.style.opacity = "1"
+//     }
+//     // scene.debugLayer.show({
+//     //     embedMode: true,
+//     //     initialTab: 2,
+//     //     overlay: true
+//     // });
+//     //END/////////////////////////////////////////////////////////////////////////////////////////////////
+//     // //for loading
+//     // //for loading
+//     scene.executeWhenReady(() => {
+//         engine.hideLoadingUI();
+//         engine.runRenderLoop(() => {
+//             //mobile to look nice
+//             engine.setHardwareScalingLevel(1 / window.devicePixelRatio);
+//             engine.adaptToDeviceRatio = true;
+//             scene.render();
+//         });
+//         //if (screen.width < screen.height)
+//         setTimeout(() => {
+//             engine.stopRenderLoop()
+//         }, 100);
+//     });
+
+
+//     //SWITCHER ON SLICK
+//     switcher.onclick = () => {
+//         if (!mapOpen) {
+//             mapOpen = true
+//             // strLineBottom.style.opacity = strLineTop.style.opacity = hrLineRight.style.opacity = hrLineLeft.style.opacity = projectCursor.style.opacity = projectCursorBckg.style.opacity = "0"
+//             mainContainerMapTL.play()
+//             mainContainerProjectsTL.play()
+//             switcherTL.play()
+//             setTimeout(() => {
+//                 switcher.innerHTML = switcherGoToPro
+//                 switcher.style.top = "auto"
+//                 if (screen.width > screen.height) {
+//                     switcher.style.bottom = "0"
+//                 } else {
+//                     switcher.style.bottom = "50px"
+//                 }
+//                 switcherTL.reverse()
+//                 closeProjectsPage()
+//             }, 500);
+//             engine.runRenderLoop(() => {
+//                 // mobile to look nice
+//                 engine.setHardwareScalingLevel(1 / window.devicePixelRatio);
+//                 engine.adaptToDeviceRatio = true;
+//                 scene.render();
+//             });
+//         } else {
+//             mapOpen = false
+//             mainContainerMapTL.reverse()
+//             mainContainerProjectsTL.reverse()
+//             switcherTL.play()
+//             setTimeout(() => {
+//                 switcher.innerHTML = switcherGoToMap
+//                 switcher.style.bottom = "auto"
+//                 switcher.style.top = "0"
+//                 switcherTL.reverse()
+//                 // strLineBottom.style.opacity = strLineTop.style.opacity = hrLineRight.style.opacity = hrLineLeft.style.opacity = projectCursor.style.opacity = projectCursorBckg.style.opacity = "1"
+//             }, 500);
+//             engine.stopRenderLoop()
+//         }
+//     }
+
+//     ///////////////////////////////////////////////////////////////////////////////////////////
+//     return scene;
+// };
+
+// window.initFunction = async function () {
+//     var asyncEngineCreation = async function () {
+//         try {
+//             return createDefaultEngine();
+//         } catch (e) {
+//             console.log("the available createEngine function failed. Creating the default engine instead");
+//             return createDefaultEngine();
+//         }
+//     }
+
+//     window.engine = await asyncEngineCreation();
+//     if (!engine) throw 'engine should not be null.';
+//     startRenderLoop(engine, canvas);
+//     window.scene = createScene();
+// };
+// initFunction().then(() => {
+//     sceneToRender = scene
+// });
+
+// // Resize
+// window.addEventListener("resize", function () {
+//     engine.resize();
+// });
+// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
