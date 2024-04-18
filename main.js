@@ -1277,10 +1277,11 @@ var createScene = async function () {
     camera.attachControl(canvas, true);
     camera.inputs.attached.keyboard.detachControl();
 
-    camera.setPosition(new BABYLON.Vector3(-3.99, 20, 15.18))
-    if (screen.width < screen.height) {
-        camera.setPosition(new BABYLON.Vector3(-3.99, 30, 15.18))
-    }
+    // camera.setPosition(new BABYLON.Vector3(-3.99, 20, 15.18))
+    // if (screen.width < screen.height) {
+    //     camera.setPosition(new BABYLON.Vector3(-3.99, 30, 15.18))
+    // }
+    camera.setPosition(new BABYLON.Vector3(0, 0, 15.18))
 
     camera.minZ = 0.1;
     camera.lowerRadiusLimit = 5;
@@ -1297,7 +1298,7 @@ var createScene = async function () {
         scene
     );
     cameraTarget.position = new BABYLON.Vector3(8, -0.03, 15.18);
-    camera.target = cameraTarget
+    // camera.target = cameraTarget
     cameraTarget.isVisible = false
 
     camera.alpha = 1.32
@@ -1330,7 +1331,7 @@ var createScene = async function () {
             "",
             // "https://raw.githubusercontent.com/quincecreative/logrodProjectPage/gh-pages/Minhen5.glb",
             // "https://work.quincemedia.com/logrod-project-page/Minhen5.glb",
-            "Minhen5.glb",
+            "stolica5.glb",
             null,
             scene,
             (evt) => {
